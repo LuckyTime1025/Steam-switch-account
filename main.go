@@ -19,13 +19,14 @@ import (
 	"time"
 )
 
-type modifyRegistry interface {
-	ReviseRegistry(registrykey string, registryvalue string, SteamPath string)
-}
-
-type Material struct {
+type AutoLoginUserMaterial struct {
 	SteamPath string
 	value     string
+	name      string
+}
+type ActiveUserMaterial struct {
+	SteamPath string
+	value     int
 	name      string
 }
 
@@ -33,8 +34,8 @@ type Material struct {
 var SteamAllUser = make(map[string]map[string]int)
 var Steam = map[string]string{"AutoLoginUser": "AutoLoginUser", "SteamExe": "SteamExe", "SteamPath": "SteamPath"}
 
-var AutoLoginUser modifyRegistry
-var ActiveUser modifyRegistry
+var AutoLoginUser AutoLoginUserMaterial
+var ActiveUser ActiveUserMaterial
 
 //查询注册表
 func RegistryQuery(Steam *map[string]string) {
@@ -129,17 +130,17 @@ func SteamTasks(strkey string, strExeName string) bool {
 }
 
 //修改注册表
-func (material Material) ReviseRegistry(registrykey string, registryvalue string, SteamPath string) {
-	material.name = registrykey
-	value, erro := strconv.Atoi(registryvalue)
-	material.SteamPath = SteamPath
-
+func (material AutoLoginUserMaterial) ReviseRegistry() {
 	key, _, err := registry.CreateKey(registry.CURRENT_USER, material.SteamPath, registry.ALL_ACCESS)
-	if erro != nil {
-		err = key.SetStringValue(material.name, registryvalue)
-	} else {
-		err = key.SetQWordValue(material.name, uint64(value))
+	err = key.SetStringValue(material.name, material.value)
+
+	if err != nil {
+		log.Fatal(err)
 	}
+}
+func (material ActiveUserMaterial) ReviseRegistry() {
+	key, _, err := registry.CreateKey(registry.CURRENT_USER, material.SteamPath, registry.ALL_ACCESS)
+	err = key.SetQWordValue(material.name, uint64(material.value))
 
 	if err != nil {
 		log.Fatal(err)
@@ -176,11 +177,18 @@ func RunSteam(commandLine string) {
 //执行
 func implement(userlist *widget.Select) {
 
-	AutoLoginUser = new(Material)
-	ActiveUser = new(Material)
-
-	go AutoLoginUser.ReviseRegistry("AutoLoginUser", userlist.Selected, "Software\\Valve\\Steam")
-	go ActiveUser.ReviseRegistry("ActiveUser", strconv.Itoa(SteamAllUser[userlist.Selected]["ActiveUser"]), "Software\\Valve\\Steam\\ActiveProcess")
+	AutoLoginUser = AutoLoginUserMaterial{
+		name:      "AutoLoginUser",
+		value:     userlist.Selected,
+		SteamPath: "Software\\Valve\\Steam",
+	}
+	ActiveUser = ActiveUserMaterial{
+		name:      "ActiveUser",
+		value:     SteamAllUser[userlist.Selected]["ActiveUser"],
+		SteamPath: "Software\\Valve\\Steam\\ActiveProcess",
+	}
+	go AutoLoginUser.ReviseRegistry()
+	go ActiveUser.ReviseRegistry()
 	time.Sleep(10000)
 	RunSteam(Steam["SteamExe"])
 }
