@@ -103,7 +103,6 @@ func Document(path string, information *map[string]map[string]int) {
 
 //获取当前选择账号的信息
 func information(informationLabel *widget.Label, value *string) {
-	//fmt.Println(SteamAllUser[*value]["ActiveUser"])
 	informationLabel.SetText(*value + "\nSteamID:\n" + strconv.Itoa(SteamAllUser[*value]["SteamID"]) + "\nActiveUse:\n" + strconv.Itoa(SteamAllUser[*value]["ActiveUser"]))
 }
 
