@@ -108,13 +108,15 @@ func information(informationLabel *widget.Label, value *string) {
 }
 
 // SteamTasks 关闭Steam
-//goland:noinspection GoUnhandledErrorResult
 func SteamTasks(strkey string, strExeName string) bool {
 
 	buf := bytes.Buffer{}
 	cmd := exec.Command("wmic", "process", "get", "name,executablepath")
 	cmd.Stdout = &buf
-	cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		return false
+	}
 
 	cmd2 := exec.Command("findstr", strkey)
 	cmd2.Stdin = &buf
